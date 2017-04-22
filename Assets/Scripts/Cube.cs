@@ -66,10 +66,15 @@ public class Cube : MonoBehaviour {
         int quads = (xSize * ySize + xSize * zSize + ySize * zSize) * 2;
         int[] triangles = new int[quads * 6];
         int ring = (xSize + zSize) * 2;
-        int t = 0, v = 0;
+        int triangle = 0, vertex = 0;
 
-        for (int q = 0; q < xSize; q++, v++) {
-            t = CreateQuad(triangles, t, v, v + 1, v + ring, v + ring + 1);
+        for(int y = 0; y < ySize; y++, vertex++) {
+            // Loop through the triangles and create the faces
+            for (int i = 0; i < ring - 1; i++, vertex++) {
+                triangle = CreateQuad(triangles, triangle, vertex, vertex + 1, vertex + ring, vertex + ring + 1);
+            }
+            // For the last quad, its second and fourth vertex need to rewind to the start of the ring.
+            triangle = CreateQuad(triangles, triangle, vertex, vertex - ring + 1, vertex + ring, vertex + 1);
         }
 
         mesh.triangles = triangles;
