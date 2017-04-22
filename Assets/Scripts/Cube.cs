@@ -77,6 +77,9 @@ public class Cube : MonoBehaviour {
             triangle = CreateQuad(triangles, triangle, vertex, vertex - ring + 1, vertex + ring, vertex + 1);
         }
 
+        triangle = CreateTopFace(triangles, triangle, ring);
+        triangle = CreateBottomFace(triangles, triangle, ring);
+
         mesh.triangles = triangles;
     }
 
@@ -86,6 +89,70 @@ public class Cube : MonoBehaviour {
         triangles[i + 2] = triangles[i + 3] = bottomRight;
         triangles[i + 5] = topRight;
         return i + 6;
+    }
+
+    private int CreateTopFace(int[] triangles, int triangle, int ring) {
+        int vertex = ring * ySize;
+        for (int x = 0; x < xSize - 1; x++, vertex++) {
+            triangle = CreateQuad(triangles, triangle, vertex, vertex + 1, vertex + ring - 1, vertex + ring);
+        }
+        triangle = CreateQuad(triangles, triangle, vertex, vertex + 1, vertex + ring - 1, vertex + 2);
+
+        int vMin = ring * (ySize + 1) - 1;
+        int vMid = vMin + 1;
+        int vMax = vertex + 2;
+
+        for (int z = 1; z < zSize - 1; z++, vMin--, vMid++, vMax++) {
+            triangle = CreateQuad(triangles, triangle, vMin, vMid, vMin - 1, vMid + xSize - 1);
+            for (int x = 1; x < xSize - 1; x++, vMid++) {
+                triangle = CreateQuad(
+                    triangles, triangle,
+                    vMid, vMid + 1, vMid + xSize - 1, vMid + xSize);
+            }
+            triangle = CreateQuad(triangles, triangle, vMid, vMax, vMid + xSize - 1, vMax + 1);
+        }
+
+        int vTop = vMin - 2;
+        triangle = CreateQuad(triangles, triangle, vMin, vMid, vTop + 1, vTop);
+        for (int x = 1; x < xSize - 1; x++, vTop--, vMid++) {
+            triangle = CreateQuad(triangles, triangle, vMid, vMid + 1, vTop, vTop - 1);
+        }
+        triangle = CreateQuad(triangles, triangle, vMid, vTop - 2, vTop, vTop - 1);
+
+        return triangle;
+    }
+
+    private int CreateBottomFace(int[] triangles, int triangle, int ring) {
+        int v = 1;
+        int vMid = vertices.Length - (xSize - 1) * (zSize - 1);
+        triangle = CreateQuad(triangles, triangle, ring - 1, vMid, 0, 1);
+        for (int x = 1; x < xSize - 1; x++, v++, vMid++) {
+            triangle = CreateQuad(triangles, triangle, vMid, vMid + 1, v, v + 1);
+        }
+        triangle = CreateQuad(triangles, triangle, vMid, v + 2, v, v + 1);
+
+        int vMin = ring - 2;
+        vMid -= xSize - 2;
+        int vMax = v + 2;
+
+        for (int z = 1; z < zSize - 1; z++, vMin--, vMid++, vMax++) {
+            triangle = CreateQuad(triangles, triangle, vMin, vMid + xSize - 1, vMin + 1, vMid);
+            for (int x = 1; x < xSize - 1; x++, vMid++) {
+                triangle = CreateQuad(
+                    triangles, triangle,
+                    vMid + xSize - 1, vMid + xSize, vMid, vMid + 1);
+            }
+            triangle = CreateQuad(triangles, triangle, vMid + xSize - 1, vMax + 1, vMid, vMax);
+        }
+
+        int vTop = vMin - 1;
+        triangle = CreateQuad(triangles, triangle, vTop + 1, vTop, vTop + 2, vMid);
+        for (int x = 1; x < xSize - 1; x++, vTop--, vMid++) {
+            triangle = CreateQuad(triangles, triangle, vTop, vTop - 1, vMid, vMid + 1);
+        }
+        triangle = CreateQuad(triangles, triangle, vTop, vTop - 1, vMid, vTop - 2);
+
+        return triangle;
     }
 
     private void OnDrawGizmos() {
