@@ -10,14 +10,17 @@ public class Cube : MonoBehaviour {
     private Vector3[] vertices;
 
     private void Awake() {
-        StartCoroutine(Generate());
+        Generate();
     }
 
-    private IEnumerator Generate() {
+    private void Generate() {
         GetComponent<MeshFilter>().mesh = mesh = new Mesh();
         mesh.name = "Procedural Cube";
-        WaitForSeconds wait = new WaitForSeconds(0.05f);
+        CreateVertices();
+        CreateTriangles();
+    }
 
+    private void CreateVertices() {
         int cornerVertices = 8;
         int edgeVertices = (xSize + ySize + zSize - 3) * 4;
         int faceVertices = (
@@ -26,38 +29,58 @@ public class Cube : MonoBehaviour {
             (ySize - 1) * (zSize - 1)) * 2;
         vertices = new Vector3[cornerVertices + edgeVertices + faceVertices];
 
-        int v = 0;
+        int vertex = 0;
+        // Generate a "ring" and then extrude it upwards
         for (int y = 0; y <= ySize; y++) {
             for (int x = 0; x <= xSize; x++) {
-                vertices[v++] = new Vector3(x, y, 0);
-                yield return wait;
+                vertices[vertex++] = new Vector3(x, y, 0);
             }
             for (int z = 1; z <= zSize; z++) {
-                vertices[v++] = new Vector3(xSize, y, z);
-                yield return wait;
+                vertices[vertex++] = new Vector3(xSize, y, z);
             }
             for (int x = xSize - 1; x >= 0; x--) {
-                vertices[v++] = new Vector3(x, y, zSize);
-                yield return wait;
+                vertices[vertex++] = new Vector3(x, y, zSize);
             }
             for (int z = zSize - 1; z > 0; z--) {
-                vertices[v++] = new Vector3(0, y, z);
-                yield return wait;
+                vertices[vertex++] = new Vector3(0, y, z);
+            }
+        }
+
+        // Fill in the top and bottom of the cube
+        for (int z = 1; z < zSize; z++) {
+            for (int x = 1; x < xSize; x++) {
+                vertices[vertex++] = new Vector3(x, ySize, z);
             }
         }
 
         for (int z = 1; z < zSize; z++) {
             for (int x = 1; x < xSize; x++) {
-                vertices[v++] = new Vector3(x, ySize, z);
-                yield return wait;
+                vertices[vertex++] = new Vector3(x, 0, z);
             }
         }
-        for (int z = 1; z < zSize; z++) {
-            for (int x = 1; x < xSize; x++) {
-                vertices[v++] = new Vector3(x, 0, z);
-                yield return wait;
-            }
+
+        mesh.vertices = vertices;
+    }
+
+    private void CreateTriangles() {
+        int quads = (xSize * ySize + xSize * zSize + ySize * zSize) * 2;
+        int[] triangles = new int[quads * 6];
+        int ring = (xSize + zSize) * 2;
+        int t = 0, v = 0;
+
+        for (int q = 0; q < xSize; q++, v++) {
+            t = CreateQuad(triangles, t, v, v + 1, v + ring, v + ring + 1);
         }
+
+        mesh.triangles = triangles;
+    }
+
+    private int CreateQuad(int[] triangles, int i, int bottomLeft, int bottomRight, int topLeft, int topRight) {
+        triangles[i] = bottomLeft;
+        triangles[i + 1] = triangles[i + 4] = topLeft;
+        triangles[i + 2] = triangles[i + 3] = bottomRight;
+        triangles[i + 5] = topRight;
+        return i + 6;
     }
 
     private void OnDrawGizmos() {
